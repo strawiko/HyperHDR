@@ -56,7 +56,7 @@ macro(InstallerWindows TARGET)
 		install(FILES ${TurboJPEG_INSTALL_LIB} DESTINATION "bin" COMPONENT "HyperHDR" )
 
 		# Web resources
-		if (NOT USE_EMBEDDED_WEB_RESOURCES)
+		if (ENABLE_WEBSERVER AND NOT USE_EMBEDDED_WEB_RESOURCES)
 			if (NOT TARGET webserver-resources)
 				message(FATAL_ERROR "Could not find compiled resources for the web server. Consider using USE_EMBEDDED_WEB_RESOURCES option" )
 			endif()

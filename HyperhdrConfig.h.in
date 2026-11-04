@@ -66,6 +66,15 @@
 // Define to enable network discovery
 #cmakedefine ENABLE_BONJOUR
 
+// Define to enable the HTTP/HTTPS server and web interface
+#cmakedefine ENABLE_WEBSERVER
+
+// Define to enable SSDP discovery
+#cmakedefine ENABLE_SSDP
+
+// Define to enable network LED device drivers
+#cmakedefine ENABLE_NETWORK_LED_DEVICES
+
 // Define to enable MQTT network client
 #cmakedefine ENABLE_MQTT
 

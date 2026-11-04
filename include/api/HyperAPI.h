@@ -1,5 +1,7 @@
 #pragma once
 
+#include <HyperhdrConfig.h>
+
 #ifndef PCH_ENABLED
 	#include <QJsonObject>
 	#include <QString>
@@ -103,7 +105,9 @@ private:
 	void handleLutInstallCommand(const QJsonObject& message, const QString& command, int tan);
 	void handleSmoothingCommand(const QJsonObject& message, const QString& command, int tan);
 	void handleCurrentStateCommand(const QJsonObject& message, const QString& command, int tan);
+	#ifdef ENABLE_NETWORK_LED_DEVICES
 	void handleTunnel(const QJsonObject& message, const QString& command, int tan);
+	#endif
 	void handleNotImplemented(const QString& command, int tan);
 	void handleSaveDB(const QJsonObject& message, const QString& command, int tan);
 	void handleLoadDB(const QJsonObject& message, const QString& command, int tan);

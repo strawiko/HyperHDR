@@ -53,7 +53,10 @@
 #include <base/NetworkForwarder.h>
 
 #include <jsonserver/JsonServer.h>
-#include <webserver/WebServer.h>
+
+#ifdef ENABLE_WEBSERVER
+	#include <webserver/WebServer.h>
+#endif
 
 // Flatbuffer Server
 #include <flatbuffers/server/FlatBuffersServer.h>
@@ -61,8 +64,9 @@
 // ProtoNanoBuffer Server
 #include <proto-nano-server/ProtoServer.h>
 
-// ssdp
-#include <ssdp/SSDPHandler.h>
+#ifdef ENABLE_SSDP
+	#include <ssdp/SSDPHandler.h>
+#endif
 
 // instance zero default configuration
 #include <base/InstanceConfig.h>
@@ -384,35 +388,39 @@ void HyperHdrDaemon::startNetworkServices()
 	networkThreadClients.push_back(_jsonServer);
 	connect(_instanceManager.get(), &HyperHdrManager::SignalSettingsChanged, _jsonServer, &JsonServer::handleSettingsUpdate);
 
-	WebServer* _webserver = new WebServer(_netOrigin, getSetting(settings::type::WEBSERVER), false);
-	_webserver->moveToThread(_netThread);
-	networkThreadClients.push_back(_webserver);
-	connect(_netThread, &QThread::started, _webserver, &WebServer::initServer);
-	connect(_netThread, &QThread::finished, _webserver, &WebServer::deleteLater);
-	connect(_instanceManager.get(), &HyperHdrManager::SignalSettingsChanged, _webserver, &WebServer::handleSettingsUpdate);
+	#ifdef ENABLE_WEBSERVER
+		WebServer* _webserver = new WebServer(_netOrigin, getSetting(settings::type::WEBSERVER), false);
+		_webserver->moveToThread(_netThread);
+		networkThreadClients.push_back(_webserver);
+		connect(_netThread, &QThread::started, _webserver, &WebServer::initServer);
+		connect(_netThread, &QThread::finished, _webserver, &WebServer::deleteLater);
+		connect(_instanceManager.get(), &HyperHdrManager::SignalSettingsChanged, _webserver, &WebServer::handleSettingsUpdate);
 
-	WebServer* _sslWebserver = new WebServer(_netOrigin, getSetting(settings::type::WEBSERVER), true);
-	_sslWebserver->moveToThread(_netThread);
-	networkThreadClients.push_back(_sslWebserver);
-	connect(_netThread, &QThread::started, _sslWebserver, &WebServer::initServer);
-	connect(_netThread, &QThread::finished, _sslWebserver, &WebServer::deleteLater);
-	connect(_instanceManager.get(), &HyperHdrManager::SignalSettingsChanged, _sslWebserver, &WebServer::handleSettingsUpdate);
+		WebServer* _sslWebserver = new WebServer(_netOrigin, getSetting(settings::type::WEBSERVER), true);
+		_sslWebserver->moveToThread(_netThread);
+		networkThreadClients.push_back(_sslWebserver);
+		connect(_netThread, &QThread::started, _sslWebserver, &WebServer::initServer);
+		connect(_netThread, &QThread::finished, _sslWebserver, &WebServer::deleteLater);
+		connect(_instanceManager.get(), &HyperHdrManager::SignalSettingsChanged, _sslWebserver, &WebServer::handleSettingsUpdate);
 
-	SSDPHandler* _ssdp = new SSDPHandler(
-		_accessManager->getID(),
-		getSetting(settings::type::FLATBUFSERVER).object()["port"].toInt(),
-		getSetting(settings::type::PROTOSERVER).object()["port"].toInt(),
-		getSetting(settings::type::JSONSERVER).object()["port"].toInt(),
-		getSetting(settings::type::WEBSERVER).object()["sslPort"].toInt(),
-		getSetting(settings::type::WEBSERVER).object()["port"].toInt(),
-		getSetting(settings::type::GENERAL).object()["name"].toString());
-	_ssdp->moveToThread(_netThread);
-	networkThreadClients.push_back(_ssdp);
-	connect(_ssdp, &SSDPHandler::newSsdpXmlDesc, _webserver, &WebServer::setSsdpXmlDesc);
-	connect(_netThread, &QThread::started, _ssdp, &SSDPHandler::initServer);
-	connect(_netThread, &QThread::finished, _ssdp, &SSDPHandler::deleteLater);
-	connect(_webserver, &WebServer::stateChange, _ssdp, &SSDPHandler::handleWebServerStateChange);
-	connect(_instanceManager.get(), &HyperHdrManager::SignalSettingsChanged, _ssdp, &SSDPHandler::handleSettingsUpdate);
+		#ifdef ENABLE_SSDP
+			SSDPHandler* _ssdp = new SSDPHandler(
+				_accessManager->getID(),
+				getSetting(settings::type::FLATBUFSERVER).object()["port"].toInt(),
+				getSetting(settings::type::PROTOSERVER).object()["port"].toInt(),
+				getSetting(settings::type::JSONSERVER).object()["port"].toInt(),
+				getSetting(settings::type::WEBSERVER).object()["sslPort"].toInt(),
+				getSetting(settings::type::WEBSERVER).object()["port"].toInt(),
+				getSetting(settings::type::GENERAL).object()["name"].toString());
+			_ssdp->moveToThread(_netThread);
+			networkThreadClients.push_back(_ssdp);
+			connect(_ssdp, &SSDPHandler::newSsdpXmlDesc, _webserver, &WebServer::setSsdpXmlDesc);
+			connect(_netThread, &QThread::started, _ssdp, &SSDPHandler::initServer);
+			connect(_netThread, &QThread::finished, _ssdp, &SSDPHandler::deleteLater);
+			connect(_webserver, &WebServer::stateChange, _ssdp, &SSDPHandler::handleWebServerStateChange);
+			connect(_instanceManager.get(), &HyperHdrManager::SignalSettingsChanged, _ssdp, &SSDPHandler::handleSettingsUpdate);
+		#endif
+	#endif
 
 	_networkThread = std::unique_ptr<QThread, std::function<void(QThread*)>>(_netThread,
 		[networkThreadClients](QThread* networkThread) {
@@ -448,7 +456,11 @@ QJsonDocument HyperHdrDaemon::getSetting(settings::type type) const
 
 quint16 HyperHdrDaemon::getWebPort()
 {
-	return (quint16)getSetting(settings::type::WEBSERVER).object()["port"].toInt(8090);
+	#ifdef ENABLE_WEBSERVER
+		return (quint16)getSetting(settings::type::WEBSERVER).object()["port"].toInt(8090);
+	#else
+		return 0;
+	#endif
 }
 
 template<typename T>

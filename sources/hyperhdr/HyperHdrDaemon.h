@@ -74,7 +74,7 @@
 #ifdef ENABLE_BONJOUR
 #include <bonjour/DiscoveryWrapper.h>
 #else
-	typedef QObject DiscoveryWrapper;
+	class DiscoveryWrapper;
 #endif
 
 #ifdef ENABLE_CEC

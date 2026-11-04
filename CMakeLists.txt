@@ -34,6 +34,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Set build variables
 SET ( DEFAULT_PROTOBUF                    ON  )
 SET ( DEFAULT_WS281XPWM                   OFF )
+SET ( DEFAULT_PWM_LED_DEVICES             ON  )
 SET ( DEFAULT_SPI_FTDI                    ON  )
 SET ( DEFAULT_USE_SYSTEM_FLATBUFFERS_LIBS ON  )
 SET ( DEFAULT_USE_SYSTEM_MQTT_LIBS        OFF )
@@ -56,6 +57,9 @@ SET ( DEFAULT_SOUNDCAPMACOS               OFF )
 SET ( DEFAULT_CEC                         OFF )
 SET ( DEFAULT_BONJOUR                     ON  )
 SET ( DEFAULT_MQTT                        ON  )
+SET ( DEFAULT_WEBSERVER                   ON  )
+SET ( DEFAULT_SSDP                        ON  )
+SET ( DEFAULT_NETWORK_LED_DEVICES         ON  )
 SET ( DEFAULT_STATIC_QT_PLUGINS           OFF )
 SET ( DEFAULT_PRECOMPILED_HEADERS         ON  )
 SET ( DEFAULT_ZSTD                        ON  )
@@ -445,6 +449,9 @@ colorMe("ENABLE_SPI_FTDI = " ${ENABLE_SPI_FTDI})
 option(ENABLE_WS281XPWM "Enable the WS281x-PWM device" ${DEFAULT_WS281XPWM} )
 colorMe("ENABLE_WS281XPWM = " ${ENABLE_WS281XPWM})
 
+option(ENABLE_PWM_LED_DEVICES "Enable generic Raspberry Pi PWM LED device drivers" ${DEFAULT_PWM_LED_DEVICES} )
+colorMe("ENABLE_PWM_LED_DEVICES = " ${ENABLE_PWM_LED_DEVICES})
+
 message( STATUS "\n${CyanColor}SOFTWARE GRABBERS${ColorReset}")
 
 option(ENABLE_DX "Enable Windows DirectX 11 system grabber" ${DEFAULT_DX})
@@ -496,6 +503,19 @@ message( STATUS "\n${CyanColor}SERVICE SUPPORT${ColorReset}")
 
 option(ENABLE_BONJOUR "Enable the network discovery service" ${DEFAULT_BONJOUR} )
 colorMe("ENABLE_BONJOUR = " ${ENABLE_BONJOUR})
+
+option(ENABLE_WEBSERVER "Enable the HTTP/HTTPS server and web interface" ${DEFAULT_WEBSERVER})
+colorMe("ENABLE_WEBSERVER = " ${ENABLE_WEBSERVER})
+
+option(ENABLE_SSDP "Enable SSDP discovery service" ${DEFAULT_SSDP})
+if (ENABLE_SSDP AND NOT ENABLE_WEBSERVER)
+	message(STATUS "ENABLE_SSDP requires ENABLE_WEBSERVER; disabling SSDP")
+	set(ENABLE_SSDP OFF CACHE BOOL "Enable SSDP discovery service" FORCE)
+endif()
+colorMe("ENABLE_SSDP = " ${ENABLE_SSDP})
+
+option(ENABLE_NETWORK_LED_DEVICES "Enable network LED device drivers" ${DEFAULT_NETWORK_LED_DEVICES})
+colorMe("ENABLE_NETWORK_LED_DEVICES = " ${ENABLE_NETWORK_LED_DEVICES})
 
 option(ENABLE_CEC "Enable CEC" ${DEFAULT_CEC})
 colorMe("ENABLE_CEC = " ${ENABLE_CEC})
@@ -565,7 +585,7 @@ if(UNIX AND NOT APPLE)
 		colorMe("PORTABLE_LIB_FOLDER = " ${PORTABLE_LIB_FOLDER})
 	endif()
 
-	if (NOT USE_EMBEDDED_WEB_RESOURCES)
+	if (ENABLE_WEBSERVER AND NOT USE_EMBEDDED_WEB_RESOURCES)
 		file(RELATIVE_PATH WEB_REL_PATH "${CMAKE_INSTALL_FULL_BINDIR}" "${CMAKE_INSTALL_FULL_DATADIR}/hyperhdr/web")        
 		SET( WEB_RESOURCES_FOLDER "${WEB_REL_PATH}")        
 	endif()
@@ -752,8 +772,3 @@ if (WIN32 AND TARGET stb AND TARGET flatbuffers AND TARGET protobuf-nanopb AND T
 else()
 	set_target_properties(resources uninstall PROPERTIES FOLDER ExternalLibsTargets)
 endif()
-
-if (NOT ENABLE_BONJOUR)	
-	message( FATAL_ERROR "The network discovery service (ENABLE_BONJOUR) is an important feature of HyperHDR. If you know what you are doing, remove this safe-break.")
-endif()
-

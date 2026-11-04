@@ -34,7 +34,9 @@
 
 #include <HyperhdrConfig.h>
 
-#include "SystrayHandler.h"
+#ifdef ENABLE_SYSTRAY
+	#include "SystrayHandler.h"
+#endif
 #include <utils/Logger.h>
 #include <commandline/Parser.h>
 #include <utils/DefaultSignalHandler.h>
@@ -363,39 +365,40 @@ int main(int argc, char** argv)
 		}
 
 		// run the application
-		SystrayHandler* systray = (isGuiApp) ? new SystrayHandler(hyperhdrd, hyperhdrd->getWebPort(), userDataDirectory.absolutePath()) : nullptr;
+		#ifdef ENABLE_SYSTRAY
+			SystrayHandler* systray = (isGuiApp) ? new SystrayHandler(hyperhdrd, hyperhdrd->getWebPort(), userDataDirectory.absolutePath()) : nullptr;
 
-		if (systray != nullptr && systray->isInitialized())
-		{
-			#ifdef __APPLE__
-				QTimer* timer = new QTimer(systray);
-				QObject::connect(timer, &QTimer::timeout, systray, [&systray]() {
-					systray->loop();
-					});
+			if (systray != nullptr && systray->isInitialized())
+			{
+				#ifdef __APPLE__
+					QTimer* timer = new QTimer(systray);
+					QObject::connect(timer, &QTimer::timeout, systray, [&systray]() {
+						systray->loop();
+						});
 
-				timer->setInterval(200);			
-				timer->start();
-			#endif
+					timer->setInterval(200);
+					timer->start();
+				#endif
 
-			rc = app->exec();
-
-			systray->close();
-		}
-		else
-		{
-			#if defined(ENABLE_SYSTRAY)
+				rc = app->exec();
+				systray->close();
+			}
+			else
+			{
 				if (isGuiApp)
 				{
 					Error(log, "Could not inilized the systray. Make sure that the libgtk-3-0/gtk3 package is installed.");
 				}
-			#endif
+				rc = app->exec();
+			}
+
+			delete systray;
+			systray = nullptr;
+		#else
 			rc = app->exec();
-		}
+		#endif
 
 		Info(log, "The application closed with code {:d}", rc);
-
-		delete systray;
-		systray = nullptr;
 
 		delete hyperhdrd;
 		hyperhdrd = nullptr;

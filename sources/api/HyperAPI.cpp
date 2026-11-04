@@ -20,7 +20,10 @@
 #include <api/HyperAPI.h>
 #include <led-drivers/LedDeviceWrapper.h>
 #include <led-drivers/LedDeviceManufactory.h>
-#include <led-drivers/net/ProviderRestApi.h>
+
+#ifdef ENABLE_NETWORK_LED_DEVICES
+	#include <led-drivers/net/ProviderRestApi.h>
+#endif
 
 #include <base/GrabberWrapper.h>
 #include <base/SystemWrapper.h>
@@ -166,8 +169,10 @@ void HyperAPI::handleMessage(const QString& messageString, const QString& httpAu
 				handleSaveDB(message, command, tan);
 			else if (command == "load-db")
 				handleLoadDB(message, command, tan);
+			#ifdef ENABLE_NETWORK_LED_DEVICES
 			else if (command == "tunnel")
 				handleTunnel(message, command, tan);
+			#endif
 			else if (command == "signal-calibration")
 				handleLoadSignalCalibration(message, command, tan);
 			else if (command == "performance-counters")
@@ -1279,6 +1284,7 @@ void HyperAPI::stopDataConnections()
 	_ledStreamTimer->stop();
 }
 
+#ifdef ENABLE_NETWORK_LED_DEVICES
 void HyperAPI::handleTunnel(const QJsonObject& message, const QString& command, int tan)
 {
 	const QString& subcommand = message["subcommand"].toString().trimmed();
@@ -1363,6 +1369,7 @@ void HyperAPI::handleTunnel(const QJsonObject& message, const QString& command, 
 	else
 		sendErrorReply("No Authorization", full_command, tan);
 }
+#endif
 
 bool HyperAPI::isLocal(QString hostname)
 {

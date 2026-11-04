@@ -4,14 +4,29 @@ if (WIN32)
 	generate_win_rc_file(hyperhdr)
 endif()
 
-add_executable(hyperhdr
+set(HYPERHDR_SOURCES
 	HyperHdrDaemon.h
-	SystrayHandler.h
 	HyperHdrDaemon.cpp
-	SystrayHandler.cpp
 	main.cpp
 	${hyperhdr_WIN_RC_PATH}
 )
+
+# GlobalSignals always exposes DiscoveryRecord, also when the mDNS scanner is
+# disabled. Keep only this lightweight value type in headless builds.
+if(NOT ENABLE_BONJOUR)
+	list(APPEND HYPERHDR_SOURCES
+		${CMAKE_SOURCE_DIR}/sources/bonjour/DiscoveryRecord.cpp
+	)
+endif()
+
+if(ENABLE_SYSTRAY)
+	list(APPEND HYPERHDR_SOURCES
+		SystrayHandler.h
+		SystrayHandler.cpp
+	)
+endif()
+
+add_executable(hyperhdr ${HYPERHDR_SOURCES})
 
 # promote hyperhdr as GUI app
 if (WIN32)
@@ -39,19 +54,27 @@ target_link_libraries(hyperhdr
 	protobuf-nanopb
 	resources
 	infinite-engine
-	ssdp
 	suspend-handler
 	utils-image
-	webserver
 	${APPKIT_FRAMEWORK}
 )
 
-if (WIN32 OR APPLE)
-	target_link_libraries(hyperhdr systray-widget)
-else()
-	install(TARGETS systray-widget
-		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-		PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+if(ENABLE_SSDP OR ENABLE_NETWORK_LED_DEVICES)
+	target_link_libraries(hyperhdr ssdp)
+endif()
+
+if(ENABLE_WEBSERVER)
+	target_link_libraries(hyperhdr webserver)
+endif()
+
+if(ENABLE_SYSTRAY)
+	if (WIN32 OR APPLE)
+		target_link_libraries(hyperhdr systray-widget)
+	else()
+		install(TARGETS systray-widget
+			LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+			PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+	endif()
 endif()
 
 if(ENABLE_ZSTD)

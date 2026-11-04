@@ -13,18 +13,24 @@ endif()
 
 FILE ( GLOB Leddevice_SOURCES
 	"${CURRENT_HEADER_DIR}/*.h"
-	"${CURRENT_SOURCE_DIR}/*.cpp"		
-	"${CURRENT_HEADER_DIR}/net/*.h"
-	"${CURRENT_SOURCE_DIR}/net/*.cpp"
+	"${CURRENT_SOURCE_DIR}/*.cpp"
 	"${CURRENT_HEADER_DIR}/other/*.h"
 	"${CURRENT_SOURCE_DIR}/other/*.cpp"
 )
+
+if (ENABLE_NETWORK_LED_DEVICES)
+	FILE ( GLOB Leddevice_NETWORK_SOURCES
+		"${CURRENT_HEADER_DIR}/net/*.h"
+		"${CURRENT_SOURCE_DIR}/net/*.cpp"
+	)
+	list(APPEND Leddevice_SOURCES ${Leddevice_NETWORK_SOURCES})
+endif()
 
 IF ( HAVE_SERIAL_LED )	
 	FILE ( GLOB Leddevice_SERIAL_SOURCES "${CURRENT_HEADER_DIR}/serial/*.h" "${CURRENT_SOURCE_DIR}/serial/*.cpp")
 endif()
 
-if (UNIX AND NOT APPLE)
+if (ENABLE_PWM_LED_DEVICES AND UNIX AND NOT APPLE)
 	FILE ( GLOB Leddevice_PWM_SOURCES "${CURRENT_HEADER_DIR}/pwm/rpi_pio/*.h" "${CURRENT_SOURCE_DIR}/pwm/rpi_pio/*.cpp")
 	FILE ( GLOB Leddevice_rpi_blaster "${CURRENT_HEADER_DIR}/pwm/pi-blaster/*.h" "${CURRENT_SOURCE_DIR}/pwm/pi-blaster/*.cpp")
 	list( APPEND Leddevice_PWM_SOURCES ${Leddevice_rpi_blaster})
